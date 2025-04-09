@@ -1,3 +1,8 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using TaskManager.Models;
+
+
 namespace TaskManager
 {
     public class Program
