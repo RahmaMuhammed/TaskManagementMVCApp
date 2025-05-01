@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -46,19 +47,27 @@ namespace TaskManager
             builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
                 opt.TokenLifespan = TimeSpan.FromHours(3));
 
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+             .AddCookie(options =>
+             {
+                 options.LoginPath = "/Account/Login";
+                 options.LogoutPath = "/Account/Logout";
+             });
+
+            builder.Services.AddAuthorization();
 
 
             var app = builder.Build();
-          
-            
+
+
 
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                 await IdentityDataInitializer.SeedRolesAsync(services);
-   // var emailSender = services.GetRequiredService<ICustomEmailSender>();
-   // await emailSender.SendEmailAsync("rahmamuhammed285@gmail.com", "Hi", "This is a test");
-}
+                // var emailSender = services.GetRequiredService<ICustomEmailSender>();
+                // await emailSender.SendEmailAsync("rahmamuhammed285@gmail.com", "Hi", "This is a test");
+            }
 
             if (!app.Environment.IsDevelopment())
             {
@@ -76,8 +85,8 @@ namespace TaskManager
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
 
-            await app.RunAsync(); 
-        
+            await app.RunAsync();
+
         }
     }
 }

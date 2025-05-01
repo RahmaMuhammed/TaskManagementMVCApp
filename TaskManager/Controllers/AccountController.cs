@@ -29,7 +29,7 @@ namespace TaskManager.Controllers
             _signInManager = signInManager;
         }
 
-        // SIGN UP
+        ///////////////////////////////////////// SIGNUP ////////////////////////////////////////////////
         public async Task<IActionResult> Register()
         {
             return View();
@@ -122,7 +122,7 @@ namespace TaskManager.Controllers
             }
         }
 
-        // SIGN IN
+        ///////////////////////////////////////// SIGNIN ////////////////////////////////////////////////
         public async Task<IActionResult> Login()
         {
             return View();
@@ -152,8 +152,11 @@ namespace TaskManager.Controllers
                 var result = await _signInManager.CheckPasswordSignInAsync(user,model.Password,false);
                 if(result.Succeeded)
                 {
+                    // Sign the user in by creating an authentication cookie after successful password check
+                    // 'isPersistent: false' means the user will be signed out when the browser is closed
+                    await _signInManager.SignInAsync(user, isPersistent: false);
                     // If login succeeded, redirect to the home page
-                    return RedirectToAction("HomePage");
+                    return RedirectToAction("Index","Home");
                 }
                 else
                 {
@@ -297,6 +300,15 @@ namespace TaskManager.Controllers
 
             // Redisplay form with errors
             return View(model);
+        }
+
+        ///////////////////////////////////////// SIGNOUT ////////////////////////////////////////////////
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction("Login", "Account");
         }
 
     }
