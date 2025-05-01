@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Email Not Confirmed";
+}
+
+<div class="container mt-5 text-center">
+    <h2 class="text-danger">Your email is not confirmed</h2>
+    <p class="lead">
+        Please check your email for a confirmation link.
+    </p>
+    <p>If you didn’t receive the email, click the button below to resend it.</p>
+
+    <form asp-action="ResendConfirmationEmail" method="post">
+        <input type="hidden" name="email" value="@ViewData["UserEmail"]" />
+        <button type="submit" class="btn btn-primary">Resend Confirmation Email</button>
+    </form>
+</div>

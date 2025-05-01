@@ -42,7 +42,9 @@ namespace TaskManager
 
             builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
             builder.Services.AddTransient<ICustomEmailSender, EmailSender>();
-           
+
+            builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
+                opt.TokenLifespan = TimeSpan.FromHours(3));
 
 
 
