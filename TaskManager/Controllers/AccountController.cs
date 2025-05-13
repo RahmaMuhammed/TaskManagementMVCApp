@@ -13,6 +13,9 @@ using TaskManager.ViewModels;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 using NuGet.Common;
 using System.Web;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System.Security.Claims;
 
 namespace TaskManager.Controllers
 {
@@ -294,13 +297,132 @@ namespace TaskManager.Controllers
 
             // Show validation errors if reset failed
             foreach (var error in result.Errors)
-            {
+            {   
                 ModelState.AddModelError(string.Empty, error.Description);
             }
 
             // Redisplay form with errors
             return View(model);
         }
+        ///////////////////////////////////////// EXTERNAL LOGIN ////////////////////////////////////////////////
+        [HttpGet]
+        public IActionResult SetPassword()
+        {
+            return View();
+        }
+        [HttpGet]
+        [HttpPost]
+        public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
+        {
+            // If there was an error from the external provider (e.g. Google), show error
+            if (remoteError != null)
+            {
+                ModelState.AddModelError(string.Empty, $"Error from external provider: {remoteError}");
+                return View("Login");
+            }
+
+            // Get the external login info (like provider name, unique user ID, claims, etc.)
+            var info = await _signInManager.GetExternalLoginInfoAsync();
+            if (info == null)
+            {
+                // If info is null, something went wrong during external login
+                return RedirectToAction(nameof(Login));
+            }
+
+            // Try to sign in the user using external login info (e.g. check if already registered with this provider)
+            var signInResult = await _signInManager.ExternalLoginSignInAsync(
+                info.LoginProvider,    // e.g. "Google"
+                info.ProviderKey,      // Unique key for this user from the provider
+                isPersistent: false,   // Don't remember login across sessions
+                bypassTwoFactor: true  // Skip 2FA for simplicity
+            );
+
+            if (signInResult.Succeeded)
+            {
+                // User already exists and was signed in successfully
+                return RedirectToLocal(returnUrl);
+            }
+            else
+            {
+                // Get the user's email from the external provider (e.g., Google profile)
+                var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+
+                // Check if a user with this email already exists in your database
+                var existingUser = await _userManager.FindByEmailAsync(email);
+                if (existingUser == null)
+                {
+                    // Create a new user with the email as both username and email
+                    var user = new AppUser
+                    {
+                        UserName = email,
+                        Email = email
+                    };
+
+                    // Create the user in the database WITHOUT a password
+                    var createResult = await _userManager.CreateAsync(user);
+                    if (!createResult.Succeeded)
+                    {
+                        // If user creation failed, show errors
+                        foreach (var error in createResult.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+                        return View("Login");
+                    }
+
+                    // Link the external login info to the newly created user
+                    await _userManager.AddLoginAsync(user, info);
+
+                    // Optional: Sign in the user
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+
+                    // Optional: Redirect to page to set password or profile info
+                    return RedirectToAction("SetPassword"); // 👈 This is your custom page to set a password
+                }
+                else
+                {
+                    // User already exists (by email), link the external login info
+                    await _userManager.AddLoginAsync(existingUser, info);
+
+                    // Sign in the existing user
+                    await _signInManager.SignInAsync(existingUser, isPersistent: false);
+
+                    return RedirectToLocal(returnUrl);
+                }
+            }
+        }
+
+        // Utility method to redirect safely (handles null returnUrl)
+        private IActionResult RedirectToLocal(string? returnUrl)
+        {
+            if (Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            else
+            {
+                return RedirectToAction(nameof(HomeController.Index), "Home");
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ExternalLogin(string provider, string? returnUrl = null)
+        {
+            // Create the redirect URL for the callback after external login (e.g., Google)
+            // This is the method that will handle the response from the external provider
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
+
+            // Configure authentication properties for the external login (e.g., Google)
+            // These properties include the redirect URL and other settings like preserving state
+            var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+
+            // Challenge the specified external login provider (e.g., Google)
+            // This will redirect the user to the Google login page
+            return Challenge(properties, provider);
+        }
+
+
+
 
         ///////////////////////////////////////// SIGNOUT ////////////////////////////////////////////////
         [HttpPost]

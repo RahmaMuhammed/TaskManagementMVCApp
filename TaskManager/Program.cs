@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -47,14 +48,26 @@ namespace TaskManager
             builder.Services.Configure<DataProtectionTokenProviderOptions>(opt =>
                 opt.TokenLifespan = TimeSpan.FromHours(3));
 
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-             .AddCookie(options =>
-             {
-                 options.LoginPath = "/Account/Login";
-                 options.LogoutPath = "/Account/Logout";
-             });
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+            })
+ .AddCookie(options =>
+ {
+     options.LoginPath = "/Account/Login";
+     options.LogoutPath = "/Account/Logout";
+ })
+ .AddGoogle(options =>
+ {
+     IConfigurationSection googleAuthNSection =
+         builder.Configuration.GetSection("Authentication:Google");
 
-            builder.Services.AddAuthorization();
+     options.ClientId = googleAuthNSection["ClientId"];
+     options.ClientSecret = googleAuthNSection["ClientSecret"];
+     options.CallbackPath = "/signin-google";
+ });
+
 
 
             var app = builder.Build();
