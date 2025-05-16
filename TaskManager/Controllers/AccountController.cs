@@ -306,10 +306,42 @@ namespace TaskManager.Controllers
         }
         ///////////////////////////////////////// EXTERNAL LOGIN ////////////////////////////////////////////////
         [HttpGet]
+        [HttpGet]
         public IActionResult SetPassword()
         {
             return View();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> SetPassword(string newPassword)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            var hasPassword = await _userManager.HasPasswordAsync(user);
+            if (hasPassword)
+            {
+                ModelState.AddModelError(string.Empty, "User already has a password.");
+                return View();
+            }
+
+            var result = await _userManager.AddPasswordAsync(user, newPassword);
+            if (result.Succeeded)
+            {
+                return RedirectToAction("Index", "Home"); 
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return View();
+        }
+
         [HttpGet]
         [HttpPost]
         public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
@@ -377,7 +409,7 @@ namespace TaskManager.Controllers
                     await _signInManager.SignInAsync(user, isPersistent: false);
 
                     // Optional: Redirect to page to set password or profile info
-                    return RedirectToAction("SetPassword"); // 👈 This is your custom page to set a password
+                    return RedirectToAction("SetPassword"); // This is your custom page to set a password
                 }
                 else
                 {
