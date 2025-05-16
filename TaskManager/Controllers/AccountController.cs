@@ -67,7 +67,7 @@ namespace TaskManager.Controllers
                         $"Please confirm your email by clicking here: <a href='{confirmationLink}'>Confirm Email</a>");
 
                     // Assign role based on email domain
-                    if (model.Email.EndsWith("@taskmanager.admin"))
+                    if (model.Email.EndsWith("admin@dev.com"))
                     {
                         await _userManager.AddToRoleAsync(user, "Admin");
                     }

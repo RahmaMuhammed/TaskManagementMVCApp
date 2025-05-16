@@ -14,6 +14,9 @@ namespace TaskManager
         public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
 
             builder.Services.AddControllersWithViews();
 
@@ -70,6 +73,7 @@ namespace TaskManager
 
 
 
+
             var app = builder.Build();
 
 
@@ -78,8 +82,12 @@ namespace TaskManager
             {
                 var services = scope.ServiceProvider;
                 await IdentityDataInitializer.SeedRolesAsync(services);
+                await IdentityDataInitializer.SeedAdminUser(services);
                 // var emailSender = services.GetRequiredService<ICustomEmailSender>();
                 // await emailSender.SendEmailAsync("rahmamuhammed285@gmail.com", "Hi", "This is a test");
+
+
+
             }
 
             if (!app.Environment.IsDevelopment())
