@@ -1,0 +1,73 @@
+﻿@model IEnumerable<TaskManager.ViewModels.TaskViewModel>
+
+@using TaskManager.Models
+@{
+    ViewBag.Title = "My Tasks";
+}
+
+<h2>My Tasks</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Deadline</th>
+            <th>Status</th>
+            <th>Update Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var task in Model)
+        {
+            bool deadlinePassed = DateTime.Now > task.Deadline && task.Status != Task_Status.Completed;
+            <tr>
+                <td>@task.Title</td>
+                <td>@task.Description</td>
+                <td>@task.Deadline.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>
+                    @if (deadlinePassed)
+                    {
+                        <span class="text-danger">@task.Status (Deadline Passed)</span>
+                    }
+                    else
+                    {
+                        @task.Status
+                    }
+                </td>
+                <td>
+                    @if (deadlinePassed)
+                    {
+                        <span class="text-muted">Editing disabled</span>
+                    }
+                    else
+                    {
+                        <form asp-action="UpdateStatus" method="post" style="display:inline-block;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@task.Id" />
+                            <select name="newStatus" class="form-select form-select-sm d-inline-block w-auto" required>
+                                @foreach (Task_Status status in Enum.GetValues(typeof(Task_Status)))
+                                {
+                                    <option value="@status" selected="@(task.Status == status)">
+                                        @status
+                                    </option>
+                                }
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-primary">Update</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

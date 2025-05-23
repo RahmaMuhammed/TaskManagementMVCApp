@@ -1,21 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using MimeKit;
-using MailKit.Net.Smtp;
-using MailKit.Security;
-using System;
-using System.Threading.Tasks;
+using System.Security.Claims;
+using System.Web;
 using TaskManager.Helpers;
 using TaskManager.Models;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using TaskManager.ViewModels;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
-using NuGet.Common;
-using System.Web;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
 
 namespace TaskManager.Controllers
 {
@@ -48,8 +37,6 @@ namespace TaskManager.Controllers
                     UserName = model.FullName,
                     Email = model.Email,
                     PhoneNumber = model.PhoneNumber,
-                    CompletedTaskCount = 0,
-                    TaskCount = 0
                 };
                 // Create the user in the database with the given password
                 var result = await _userManager.CreateAsync(user, model.Password);
@@ -131,7 +118,7 @@ namespace TaskManager.Controllers
             return View();
         }
 
-       [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (ModelState.IsValid)
@@ -142,7 +129,7 @@ namespace TaskManager.Controllers
                 {
                     // Show an error message if the user is not found
                     ViewData["ErrorMessage"] = "The user could not be found.";
-                        return View("Error"); 
+                    return View("Error");
                 }
                 // Check if the user's email is confirmed
                 if (!await _userManager.IsEmailConfirmedAsync(user))
@@ -152,14 +139,20 @@ namespace TaskManager.Controllers
                 }
 
                 // Attempt to sign in the user with the provided password
-                var result = await _signInManager.CheckPasswordSignInAsync(user,model.Password,false);
-                if(result.Succeeded)
+                var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
+                if (result.Succeeded)
                 {
                     // Sign the user in by creating an authentication cookie after successful password check
                     // 'isPersistent: false' means the user will be signed out when the browser is closed
                     await _signInManager.SignInAsync(user, isPersistent: false);
-                    // If login succeeded, redirect to the home page
-                    return RedirectToAction("Index","Home");
+                    if (await _userManager.IsInRoleAsync(user, "Admin"))
+                    {
+                        return RedirectToAction("Index", "Admin");
+                    }
+                    else
+                    {
+                        return RedirectToAction("Index", "User");
+                    }
                 }
                 else
                 {
@@ -207,7 +200,7 @@ namespace TaskManager.Controllers
                 var encodedToken = HttpUtility.UrlEncode(token);
 
                 // Build the reset link
-                var resetLink = Url.Action("ResetPassword", "Account", new {token = encodedToken, email = user.Email }, Request.Scheme);
+                var resetLink = Url.Action("ResetPassword", "Account", new { token = encodedToken, email = user.Email }, Request.Scheme);
 
                 // Send reset email
                 await _emailSender.SendEmailAsync(user.Email, "Reset Password",
@@ -297,7 +290,7 @@ namespace TaskManager.Controllers
 
             // Show validation errors if reset failed
             foreach (var error in result.Errors)
-            {   
+            {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
 
@@ -331,7 +324,7 @@ namespace TaskManager.Controllers
             var result = await _userManager.AddPasswordAsync(user, newPassword);
             if (result.Succeeded)
             {
-                return RedirectToAction("Index", "Home"); 
+                return RedirectToAction("Index", "Home");
             }
 
             foreach (var error in result.Errors)
@@ -404,6 +397,14 @@ namespace TaskManager.Controllers
 
                     // Link the external login info to the newly created user
                     await _userManager.AddLoginAsync(user, info);
+                    if (email.EndsWith("admin@dev.com"))
+                    {
+                        await _userManager.AddToRoleAsync(user, "Admin");
+                    }
+                    else
+                    {
+                        await _userManager.AddToRoleAsync(user, "User");
+                    }
 
                     // Optional: Sign in the user
                     await _signInManager.SignInAsync(user, isPersistent: false);

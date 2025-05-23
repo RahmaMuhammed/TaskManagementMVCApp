@@ -5,7 +5,7 @@ namespace TaskManager.ViewModels
     public class ResetPasswordViewModel
     {
         [Required]
-        public string Token {  get; set; }
+        public string Token { get; set; }
         [Required]
         [EmailAddress]
         public string Email { get; set; }
@@ -13,7 +13,7 @@ namespace TaskManager.ViewModels
         [DataType(DataType.Password)]
         public string NewPassword { get; set; }
         [Required]
-        [Compare("NewPassword" ,ErrorMessage = "Passwords do not match.")]
+        [Compare("NewPassword", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; }
     }
 }
