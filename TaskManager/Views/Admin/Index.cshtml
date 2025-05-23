@@ -1,0 +1,106 @@
+﻿@model TaskManager.ViewModels.AdminDashboardViewModel
+
+@{
+    ViewBag.Title = "Admin Dashboard";
+}
+
+<h2>Admin Dashboard</h2>
+
+<!-- Summary Section -->
+<div>
+    <h3>Summary</h3>
+    <ul>
+        <li>Total Tasks: @Model.TotalTasks</li>
+        <li>Completed Tasks: @Model.CompletedTasks</li>
+        <li>Pending Tasks: @Model.PendingTasks</li>
+        <li>Total Users: @Model.TotalUsers</li>
+    </ul>
+</div>
+
+<hr />
+
+<!-- Tasks List -->
+<div>
+    <h3>Tasks List</h3>
+    @if (Model.Tasks.Any())
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Assigned User</th>
+                    <th>Status</th>
+                    <th>Deadline</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var task in Model.Tasks)
+                {
+                    <tr>
+                        <td>@task.Title</td>
+                        <td>@task.UserEmail</td>
+                        <td>@task.Status</td>
+                        <td>@task.Deadline.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <a href="@Url.Action("EditTask", "Admin", new { id = task.Id })" class="btn btn-sm btn-primary">Edit</a>
+                            <a href="@Url.Action("TaskDetails", "Admin", new { id = task.Id })" class="btn btn-sm btn-primary">Details</a>
+                            <a href="@Url.Action("DeleteTask", "Admin", new { id = task.Id })" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>No tasks available.</p>
+    }
+</div>
+
+<hr />
+
+<!-- Users List -->
+<div>
+    <h3>Users Management</h3>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Total Tasks</th>
+                <th>In Progress</th>
+                <th>Completed</th>
+                <th>Deadlines</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Users)
+            {
+                <tr>
+                    <td>@user.Email</td>
+                    <td>@user.TaskCount</td>
+                    <td>@user.InProgressTasks</td>
+                    <td>@user.CompletedTasks</td>
+                    <td>
+                        @foreach (var date in user.Deadlines)
+                        {
+                            <div>@date.ToString("yyyy-MM-dd")</div>
+                        }
+                    </td>
+                    <td>
+                        <a href="@Url.Action("DeleteUser", "Admin", new { id = user.Id })" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this user?');">Delete User</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+
+<hr />
+
+<!-- Create New Task Button -->
+<div>
+    <a href="@Url.Action("CreateTask", "Admin")" class="btn btn-lg btn-primary">Create New Task</a>
+</div>
