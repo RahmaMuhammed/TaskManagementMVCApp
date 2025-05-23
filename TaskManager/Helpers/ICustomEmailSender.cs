@@ -2,6 +2,6 @@
 {
     public interface ICustomEmailSender
     {
-           public Task SendEmailAsync(string toEmail, string subject, string message);
+        public Task SendEmailAsync(string toEmail, string subject, string message);
     }
 }
